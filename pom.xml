@@ -6,12 +6,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.monprojet</groupId>
-    <artifactId>MonProjetMVC</artifactId>
+    <groupId>com.ewin</groupId>
+    <artifactId>EwinFramework</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>MonProjetMVC</name>
+    <name>EwinFramework</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -51,7 +51,7 @@
     </dependencies>
 
     <build>
-        <finalName>MonProjetMVC</finalName>
+        <finalName>EwinFramework</finalName>
 
         <plugins>
 

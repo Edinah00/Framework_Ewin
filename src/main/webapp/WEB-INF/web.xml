@@ -1,4 +1,4 @@
-```xml
+
 <?xml version="1.0" encoding="UTF-8"?>
 
 <web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
@@ -12,17 +12,7 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Déclaration de la servlet -->
-    <servlet>
-        <servlet-name>FrontControllerServlet</servlet-name>
-        <servlet-class>controller.FrontControllerServlet</servlet-class>
-    </servlet>
-
-    <!-- Mapping -->
-    <servlet-mapping>
-        <servlet-name>FrontControllerServlet</servlet-name>
-        <url-pattern>/front</url-pattern>
-    </servlet-mapping>
+ 
 
     <!-- Gestion des erreurs -->
     <error-page>
@@ -38,7 +28,7 @@
     <!-- Paramètres globaux -->
     <context-param>
         <param-name>applicationName</param-name>
-        <param-value>MonProjetMVC</param-value>
+        <param-value>EwinFramework</param-value>
     </context-param>
 
     <!-- Temps d'expiration des sessions -->
@@ -47,4 +37,4 @@
     </session-config>
 
 </web-app>
-```
+

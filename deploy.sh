@@ -3,7 +3,7 @@
 # --- CONFIGURATION (À adapter selon ton PC) ---
 TOMCAT_PATH="/home/edinah/Documents/logiciel/tomcat" # Chemin vers ton dossier Tomcat
 WAR_NAME="EwinFramework"
-SOURCE_WAR="target/EwinFramework-0.0.1-SNAPSHOT.war"
+SOURCE_WAR="target/EwinFramework.war"
 
 echo "🚀 Début du déploiement de $WAR_NAME..."
 
