@@ -1,3 +1,5 @@
-mg/itu/FrameworkEwin/annotations/controllers/MonControleur.class
 mg/itu/FrameworkEwin/annotations/utils/Utils.class
 mg/itu/FrameworkEwin/controllers/FrontControllerServlet.class
+mg/itu/FrameworkEwin/models/Mapping.class
+mg/itu/FrameworkEwin/annotations/controllers/MonControleur.class
+mg/itu/FrameworkEwin/annotations/methods/URLMapping.class
