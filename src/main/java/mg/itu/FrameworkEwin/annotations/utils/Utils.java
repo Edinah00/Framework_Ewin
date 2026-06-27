@@ -2,13 +2,17 @@ package mg.itu.FrameworkEwin.annotations.utils;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.net.URL;
 import jakarta.servlet.ServletException;
 import mg.itu.FrameworkEwin.annotations.controllers.MonControleur;
-
+import mg.itu.FrameworkEwin.annotations.methods.URLMapping;
+import mg.itu.FrameworkEwin.models.*;
 public class Utils {
 
     private String nomPackage;
@@ -119,5 +123,50 @@ public class Utils {
     } catch (Exception e) {
         throw new ServletException("Erreur lors du scan des " + this.niveau, e);
     }
+}
+
+public Map<String, Mapping> mapMethod_Url() throws ServletException {
+
+    Map<String, Mapping> mappings = new HashMap<>();
+
+    try {
+
+        List<Class<?>> classes = getClasses();
+
+        for (Class<?> clazz : classes) {
+
+            if (clazz.isAnnotationPresent(MonControleur.class)) {
+
+                Method[] methods = clazz.getDeclaredMethods();
+
+                for (Method method : methods) {
+
+                    if (method.isAnnotationPresent(URLMapping.class)) {
+
+                        URLMapping annotation =
+                                method.getAnnotation(URLMapping.class);
+
+                        String url = annotation.value();
+
+                        Mapping mapping = new Mapping(
+                                clazz.getName(),
+                                method.getName());
+
+                        mappings.put(url, mapping);
+
+                        System.out.println(
+                                url + " -> "
+                                + clazz.getName()
+                                + "." + method.getName());
+                    }
+                }
+            }
+        }
+
+    } catch (Exception e) {
+        throw new ServletException("Erreur scan URLMapping", e);
+    }
+
+    return mappings;
 }
 }
