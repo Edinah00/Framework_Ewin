@@ -125,9 +125,9 @@ public class Utils {
     }
 }
 
-public Map<String, Mapping> mapMethod_Url() throws ServletException {
+public Map<URLMethod, Mapping> mapMethod_Url() throws ServletException {
 
-    Map<String, Mapping> mappings = new HashMap<>();
+    Map<URLMethod, Mapping> mappings = new HashMap<>();
 
     try {
 
@@ -146,16 +146,17 @@ public Map<String, Mapping> mapMethod_Url() throws ServletException {
                         URLMapping annotation =
                                 method.getAnnotation(URLMapping.class);
 
-                        String url = annotation.value();
+                        String url = annotation.url();
+                        String method_http =annotation.method();
 
                         Mapping mapping = new Mapping(
                                 clazz.getName(),
                                 method.getName());
-
-                        mappings.put(url, mapping);
-
+                        URLMethod url_method = new URLMethod(url,method_http);
+                        mappings.put(url_method, mapping);
+                        
                         System.out.println(
-                                url + " -> "
+                                url+"" + " -> "
                                 + clazz.getName()
                                 + "." + method.getName());
                     }
