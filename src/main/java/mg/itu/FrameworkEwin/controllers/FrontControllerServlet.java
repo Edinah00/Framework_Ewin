@@ -56,6 +56,20 @@ public class FrontControllerServlet extends HttpServlet {
         Mapping mapping = routes.get(key);
         if (mapping != null) {
 
+            try {
+                Class<?> clazz = Class.forName(mapping.getClassName());
+                Object controller = clazz.getDeclaredConstructor().newInstance();
+
+                Method method = clazz.getDeclaredMethod(mapping.getMethodeName());
+
+                Object result = method.invoke(controller);
+
+                out.println("<h2>Route trouvée</h2>");
+                out.println("<p>Résultat : " + result + "</p>");
+
+            } catch (Exception e) {
+                throw new ServletException(e);
+            }
             out.println("<p>" + urlRelative + " => " + " Classe = "
                     + mapping.getClassName()
                     + " " + "Methode = " + mapping.getMethodeName()
