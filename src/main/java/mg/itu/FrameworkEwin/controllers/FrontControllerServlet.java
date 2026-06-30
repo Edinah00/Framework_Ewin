@@ -1,5 +1,6 @@
 package mg.itu.FrameworkEwin.controllers;
 
+import java.lang.reflect.Method;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -16,7 +17,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mg.itu.FrameworkEwin.annotations.utils.Utils;
-import mg.itu.FrameworkEwin.models.Mapping;
+import mg.itu.FrameworkEwin.models.*;
 import mg.itu.FrameworkEwin.annotations.methods.*;
 
 @WebServlet("/front")
@@ -29,7 +30,7 @@ public class FrontControllerServlet extends HttpServlet {
         Utils utils = new Utils(nomPackage, "controller", "mg.itu.FrameworkEwin.annotations.controllers.MonControleur");
 
         List<String> controleurs = utils.scanControllers();
-        Map<String, Mapping> MapURL = utils.mapMethod_Url();
+        Map<URLMethod, Mapping> MapURL = utils.mapMethod_Url();
 
         getServletContext().setAttribute("listControlleur", controleurs);
         getServletContext().setAttribute("MapURL", MapURL);
@@ -47,33 +48,41 @@ public class FrontControllerServlet extends HttpServlet {
         out.println("<h1>Tonga eto tsika aaaaa le Framework !</h1>");
         out.println("<p>URL complete : <b>" + urlComplete + "</b></p>");
         out.println("<p>URL relative <b>" + urlRelative + "</b></p>");
-        Map<String, Mapping> routes = (Map<String, Mapping>) getServletContext().getAttribute("MapURL");
+        Map<URLMethod, Mapping> routes = (Map<URLMethod, Mapping>) getServletContext().getAttribute("MapURL");
+        String methodHttp = request.getMethod();
 
-        Mapping mapping = routes.get(urlRelative);
+        URLMethod key = new URLMethod(urlRelative, methodHttp);
 
+        Mapping mapping = routes.get(key);
         if (mapping != null) {
 
-            out.println("<h2>Route trouvée</h2>");
             out.println("<p>" + urlRelative + " => " + " Classe = "
                     + mapping.getClassName()
                     + " " + "Methode = " + mapping.getMethodeName()
                     + "</p>");
 
+            out.println("<p>Methode HTTP : <b>"
+                    + request.getMethod()
+                    + "</b></p>");
+
         } else {
 
             out.println("<h2>Liste des routes disponibles</h2>");
 
-            for (Map.Entry<String, Mapping> entry : routes.entrySet()) {
+            for (Map.Entry<URLMethod, Mapping> entry : routes.entrySet()) {
 
                 Mapping m = entry.getValue();
 
                 out.println("<p>"
                         + entry.getKey()
-                        + " => " + " Classe = "
+                        + " => Classe = "
                         + m.getClassName()
-                        + " " + "Methode = "
+                        + " Methode = "
                         + m.getMethodeName()
                         + "</p>");
+                out.println("<p>Methode HTTP : <b>"
+                        + request.getMethod()
+                        + "</b></p>");
             }
         }
         out.println("</body></html>");
