@@ -20,21 +20,20 @@ import mg.itu.FrameworkEwin.annotations.utils.Utils;
 import mg.itu.FrameworkEwin.models.*;
 import mg.itu.FrameworkEwin.annotations.methods.*;
 
-@WebServlet("/front")
 public class FrontControllerServlet extends HttpServlet {
 
-    @Override
-    public void init() throws ServletException {
-        String nomPackage = getServletContext().getInitParameter("controller-package");
+    // @Override
+    // public void init() throws ServletException {
+    //     String nomPackage = getServletContext().getInitParameter("controller-package");
 
-        Utils utils = new Utils(nomPackage, "controller", "mg.itu.FrameworkEwin.annotations.controllers.MonControleur");
+    //     Utils utils = new Utils(nomPackage, "controller", "mg.itu.FrameworkEwin.annotations.controllers.MonControleur");
 
-        List<String> controleurs = utils.scanControllers();
-        Map<URLMethod, Mapping> MapURL = utils.mapMethod_Url();
+    //     List<String> controleurs = utils.scanControllers();
+    //     Map<URLMethod, Mapping> MapURL = utils.mapMethod_Url();
 
-        getServletContext().setAttribute("listControlleur", controleurs);
-        getServletContext().setAttribute("MapURL", MapURL);
-    }
+    //     getServletContext().setAttribute("listControlleur", controleurs);
+    //     getServletContext().setAttribute("MapURL", MapURL);
+    // }
 
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -54,51 +53,43 @@ public class FrontControllerServlet extends HttpServlet {
         URLMethod key = new URLMethod(urlRelative, methodHttp);
 
         Mapping mapping = routes.get(key);
-        if (mapping != null) {
 
+        if (mapping != null) {
             try {
                 Class<?> clazz = Class.forName(mapping.getClassName());
                 Object controller = clazz.getDeclaredConstructor().newInstance();
 
                 Method method = clazz.getDeclaredMethod(mapping.getMethodeName());
-
                 Object result = method.invoke(controller);
 
-                out.println("<h2>Route trouvée</h2>");
-                out.println("<p>Résultat : " + result + "</p>");
+                if (result instanceof ModelAndView) {
+                    ModelAndView modelAndView = (ModelAndView) result;
+                    String viewName = modelAndView.getViewName();
+                    Map<String, Object> modelData = modelAndView.getDonnéeÀafficher();
+
+                    for (Map.Entry<String, Object> entry : modelData.entrySet()) {
+                        request.setAttribute(entry.getKey(), entry.getValue());
+                    }
+
+                    request.getRequestDispatcher("/WEB-INF/views/" + viewName + ".jsp").forward(request, response);
+                    return;
+                }
 
             } catch (Exception e) {
                 throw new ServletException(e);
             }
-            out.println("<p>" + urlRelative + " => " + " Classe = "
-                    + mapping.getClassName()
-                    + " " + "Methode = " + mapping.getMethodeName()
-                    + "</p>");
-
-            out.println("<p>Methode HTTP : <b>"
-                    + request.getMethod()
-                    + "</b></p>");
-
         } else {
 
+            out.println("<html><body>");
             out.println("<h2>Liste des routes disponibles</h2>");
-
             for (Map.Entry<URLMethod, Mapping> entry : routes.entrySet()) {
-
                 Mapping m = entry.getValue();
-
-                out.println("<p>"
-                        + entry.getKey()
-                        + " => Classe = "
-                        + m.getClassName()
-                        + " Methode = "
-                        + m.getMethodeName()
-                        + "</p>");
-                out.println("<p>Methode HTTP : <b>"
-                        + request.getMethod()
-                        + "</b></p>");
+                out.println("<p>" + entry.getKey() + " => Classe = " + m.getClassName()
+                        + " Methode = " + m.getMethodeName() + "</p>");
             }
+            out.println("</body></html>");
         }
+
         out.println("</body></html>");
     }
 

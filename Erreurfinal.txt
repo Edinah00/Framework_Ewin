@@ -1,0 +1,37 @@
+tsy mety mipoitra le ed.jsp  
+Le chemin, ian no mipoitra eo 
+    /**
+     * NOTE IMPORTANTE — Migration de l'initialisation vers un Listener
+
+     * La méthode {@code init()} qui effectuait le scan des contrôleurs et la
+     * construction de la table des routes (attributs "listControlleur" et
+     * "MapURL" du ServletContext) a été retirée de cette servlet.
+     *
+     * Cette logique est maintenant prise en charge par la classe
+     * {@link mg.itu.FrameworkEwin.listeners.FrontControllerInitListener},
+     * qui implémente {@code jakarta.servlet.ServletContextListener} et est
+     * automatiquement enregistrée via l'annotation {@code @WebListener}.
+     *
+     * Pourquoi ce changement ?
+     * <ul>
+     *   <li><b>Fiabilité</b> : {@code init()} d'une servlet ne s'exécute
+     *       qu'au premier appel de celle-ci, sauf si {@code load-on-startup}
+     *       est explicitement configuré. Un {@code ServletContextListener}
+     *       s'exécute systématiquement au démarrage de l'application, sans
+     *       configuration supplémentaire.</li>
+     *   <li><b>Séparation des responsabilités</b> : l'initialisation globale
+     *       du Framework (scan de contrôleurs, construction des routes)
+     *       n'est pas une responsabilité propre à cette servlet ; elle
+     *       concerne l'ensemble de l'application. Un listener de contexte
+     *       est l'endroit approprié pour ce type de traitement.</li>
+     *   <li><b>Robustesse</b> : si le Framework venait à exposer plusieurs
+     *       servlets ou points d'entrée, chacune pourrait accéder aux mêmes
+     *       données ("listControlleur", "MapURL") sans dépendre de l'ordre
+     *       d'appel entre elles.</li>
+     * </ul>
+     *
+     * Les données restent stockées de la même manière (en tant qu'attributs
+     * du {@code ServletContext}) et sont donc lues de façon identique dans
+     * {@link #processRequest(HttpServletRequest, HttpServletResponse)}
+     * ci-dessous ; seul le point d'initialisation a changé.
+     */
