@@ -17,7 +17,6 @@ public class URLMethod {
         if (!(obj instanceof URLMethod)) return false;
 
         URLMethod other = (URLMethod) obj;
-
         return url.equals(other.url)
                 && method.equals(other.method);
     }

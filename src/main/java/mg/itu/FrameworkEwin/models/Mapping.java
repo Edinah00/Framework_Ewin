@@ -7,7 +7,6 @@ public class Mapping {
     public Mapping(String classname , String methodname){
         this.className =classname;
         this.methodeName =methodname;
-
     }
     public String getClassName() {
         return className;
@@ -21,5 +20,4 @@ public class Mapping {
     public void setMethodeName(String methodeName) {
         this.methodeName = methodeName;
     }
-
 }
