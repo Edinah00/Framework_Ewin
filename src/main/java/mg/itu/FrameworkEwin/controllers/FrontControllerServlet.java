@@ -70,7 +70,7 @@ public class FrontControllerServlet extends HttpServlet {
                     for (Map.Entry<String, Object> entry : modelData.entrySet()) {
                         request.setAttribute(entry.getKey(), entry.getValue());
                     }
-
+                    System.out.println("Attributs envoyés à la vue : " + modelData);
                     request.getRequestDispatcher("/WEB-INF/views/" + viewName + ".jsp").forward(request, response);
                     return;
                 }
