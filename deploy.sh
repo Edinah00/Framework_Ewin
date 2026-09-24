@@ -6,8 +6,8 @@ WAR_NAME="EwinFramework"
 SOURCE_WAR="target/EwinFramework.war"
 
 # Dossiers de destination
-DEST1="/home/edinah/Documents/L2/S4/Web Dynamique /Projet Framework/Test_Ewin/src/main/webapp/WEB-INF/lib"
-DEST2="/home/edinah/Documents/L2/S4/Web Dynamique /Projet Framework/Test_Ewin/lib"
+DEST1="/home/edinah/Documents/L3/S5/Web Dynamique/Projet Framework/Test_Ewin/src/main/webapp/WEB-INF/lib"
+DEST2="/home/edinah/Documents/L3/S5/Web Dynamique/Projet Framework/Test_Ewin/lib"
 
 echo "🚀 Début du déploiement de $WAR_NAME..."
 
