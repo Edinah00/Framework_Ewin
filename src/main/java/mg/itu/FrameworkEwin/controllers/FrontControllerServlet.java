@@ -10,7 +10,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.lang.annotation.Annotation;
-
+import java.lang.reflect.Parameter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -55,10 +55,30 @@ public class FrontControllerServlet extends HttpServlet {
             try {
                 Class<?> clazz = Class.forName(mapping.getClassName());
                 Object controller = clazz.getDeclaredConstructor().newInstance();
+                String methodName = mapping.getMethodeName();
 
-                Method method = clazz.getDeclaredMethod(mapping.getMethodeName());
-                Object result = method.invoke(controller);
+                Method method = null;
+                for(Method x : clazz.getDeclaredMethods()) {
+                    if(x.getName().equals(methodName)) {
+                        method = x;
+                        break;
+                    }
+                }
+                if (method == null) throw new ServletException("Méthode introuvable : " + methodName);
+                request.setCharacterEncoding("UTF-8");
+                Parameter[] params= method.getParameters();
+                Object[] args = new Object[params.length];// toute à null d'abrd
+                for (int i = 0; i < params.length; i++) {
+                    String paramName = params[i].getName();
+                    String paramValue = request.getParameter(paramName);
+                    args[i] = paramValue; // on suppose que tous les paramètres sont des chaînes de caractères
+                                        System.out.println(params[i].getName() + " " + params[i].isNamePresent());
 
+                }
+
+
+                Object result = method.invoke(controller,args);
+                
                 if (result instanceof ModelAndView) {
                     ModelAndView modelAndView = (ModelAndView) result;
                     String viewName = modelAndView.getViewName();
@@ -73,11 +93,10 @@ public class FrontControllerServlet extends HttpServlet {
                         response.setCharacterEncoding("UTF-8");
 
                         ObjectMapper mapper = new ObjectMapper();
-                        // Pour une méthode qui renvoie ModelAndView et annotée RestAPI,
-                        // on sérialise les données du modèle (map) plutôt que l'objet ModelAndView
                         String json = mapper.writeValueAsString(modelData);
 
-                        response.getWriter().write(json);
+                        // response.getWriter().write(json);
+                        out.print(json);
                         return;
                     } else {
                         System.out.println("Attributs envoyés à la vue : " + modelData);
