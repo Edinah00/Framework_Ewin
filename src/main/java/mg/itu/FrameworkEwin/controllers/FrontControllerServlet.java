@@ -68,14 +68,23 @@ public class FrontControllerServlet extends HttpServlet {
                 request.setCharacterEncoding("UTF-8");
                 Parameter[] params= method.getParameters();
                 Object[] args = new Object[params.length];// toute à null d'abrd
+                // for (int i = 0; i < params.length; i++) {
+                //     String paramName = params[i].getName();
+                //     String paramValue = request.getParameter(paramName);
+                //     args[i] = paramValue; // on suppose que tous les paramètres sont des chaînes de caractères
+                //                         System.out.println(params[i].getName() + " " + params[i].isNamePresent());
+
+                // }
                 for (int i = 0; i < params.length; i++) {
-                    String paramName = params[i].getName();
-                    String paramValue = request.getParameter(paramName);
-                    args[i] = paramValue; // on suppose que tous les paramètres sont des chaînes de caractères
-                                        System.out.println(params[i].getName() + " " + params[i].isNamePresent());
-
+                    Class<?> t = params[i].getType();
+                    if (BindingUtil.isSimple(t)) {
+                        // paramètre simple
+                        args[i] = BindingUtil.convert(request.getParameter(params[i].getName()), t);
+                    } else {
+                        // objet : préfixe = nom du paramètre
+                        args[i] = BindingUtil.bind(t, params[i].getName(), request);
+                    }
                 }
-
 
                 Object result = method.invoke(controller,args);
                 
