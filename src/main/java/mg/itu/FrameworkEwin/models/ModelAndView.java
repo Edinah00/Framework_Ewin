@@ -9,12 +9,11 @@ public class ModelAndView {
         this.viewName = viewName;
         this.donnéeÀafficher = donnéeÀafficher;
     }
-   public ModelAndView(){
+    public ModelAndView(){
     }
     public String getViewName() {
         return viewName;    
     }
-
     public Map<String, Object> getDonnéeÀafficher() {
         return donnéeÀafficher;
     }
@@ -25,11 +24,9 @@ public class ModelAndView {
         this.donnéeÀafficher = donnéeÀafficher;
     }
     public void setAttribute(String key, Object value) {
-    if (donnéeÀafficher == null) {
-        donnéeÀafficher = new HashMap<>();
-    }
-    donnéeÀafficher.put(key, value);
-}
-
-    
+        if (donnéeÀafficher == null) {
+            donnéeÀafficher = new HashMap<>();
+        }
+        donnéeÀafficher.put(key, value);
+    } 
 }
