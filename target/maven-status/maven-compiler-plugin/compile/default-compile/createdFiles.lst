@@ -1,6 +1,8 @@
 mg/itu/FrameworkEwin/annotations/utils/Utils.class
+mg/itu/FrameworkEwin/annotations/utils/FileUploads.class
 mg/itu/FrameworkEwin/listeners/FrontControllerInitListener.class
 mg/itu/FrameworkEwin/models/Mapping.class
+mg/itu/FrameworkEwin/annotations/utils/FileManager.class
 mg/itu/FrameworkEwin/spring/SpringContainer.class
 mg/itu/FrameworkEwin/models/URLMethod.class
 mg/itu/FrameworkEwin/models/ModelAndView.class

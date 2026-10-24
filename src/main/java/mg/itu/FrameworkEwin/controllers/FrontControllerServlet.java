@@ -1,6 +1,12 @@
 package mg.itu.FrameworkEwin.controllers;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.util.LinkedHashMap;
+import java.time.LocalDate;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,15 +18,20 @@ import java.util.Map;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.Part;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mg.itu.FrameworkEwin.annotations.utils.FileManager;
+import mg.itu.FrameworkEwin.annotations.utils.FileUploads;
 import mg.itu.FrameworkEwin.annotations.utils.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mg.itu.FrameworkEwin.models.*;
 import mg.itu.FrameworkEwin.annotations.methods.*;
 
+@MultipartConfig(maxFileSize = 50L * 1024 * 1024, maxRequestSize = 100L * 1024 * 1024)
 public class FrontControllerServlet extends HttpServlet {
 
     // @Override
@@ -67,18 +78,25 @@ public class FrontControllerServlet extends HttpServlet {
                 if (method == null) throw new ServletException("Méthode introuvable : " + methodName);
                 request.setCharacterEncoding("UTF-8");
                 Parameter[] params= method.getParameters();
-                Object[] args = new Object[params.length];// toute à null d'abrd
+                Object[] args = new Object[params.length];
+                Map<String, String[]> parameterMap = request.getParameterMap();
+                Map<String, List<FileManager>> files = extractFiles(request);
                 for (int i = 0; i < params.length; i++) {
                     String paramName = params[i].getName();
-                    String paramValue = request.getParameter(paramName);
-                    args[i] = paramValue; // on suppose que tous les paramètres sont des chaînes de caractères
-                                        System.out.println(params[i].getName() + " " + params[i].isNamePresent());
-
+                    Class<?> paramType = params[i].getType();
+                    Object value = bindParameterValue(paramName, paramType, parameterMap, files);
+                    args[i] = value;
+                    System.out.println(params[i].getName() + " -> " + (value == null ? "null" : value));
                 }
 
 
-                Object result = method.invoke(controller,args);
-                
+                Object result = new Object();
+                try {
+    result = method.invoke(controller, args);
+} catch (InvocationTargetException e) {
+    e.getCause().printStackTrace(); // vraie cause
+    throw new ServletException(e.getCause());
+}
                 if (result instanceof ModelAndView) {
                     ModelAndView modelAndView = (ModelAndView) result;
                     String viewName = modelAndView.getViewName();
@@ -141,6 +159,188 @@ public class FrontControllerServlet extends HttpServlet {
         }
 
         out.println("</body></html>");
+        
+    }
+
+    private static Object bindParameterValue(String paramName, Class<?> paramType, Map<String, String[]> parameterMap) {
+        return bindParameterValue(paramName, paramType, parameterMap, new LinkedHashMap<>());
+    }
+
+    // fichiers envoyes par le formulaire, groupes par nom de champ
+    private static Map<String, List<FileManager>> extractFiles(HttpServletRequest request)
+            throws IOException, ServletException {
+        Map<String, List<FileManager>> files = new LinkedHashMap<>();
+        String contentType = request.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("multipart/")) {
+            return files;
+        }
+        for (Part part : request.getParts()) {
+            String submitted = part.getSubmittedFileName();
+            if (submitted == null || submitted.isEmpty()) {
+                continue;
+            }
+            files.computeIfAbsent(part.getName(), k -> new ArrayList<>())
+                    .add(FileManager.from(submitted, part.getInputStream().readAllBytes()));
+        }
+        return files;
+    }
+
+    private static Object bindParameterValue(String paramName, Class<?> paramType,
+            Map<String, String[]> parameterMap, Map<String, List<FileManager>> files) {
+        if (paramType == null) {
+            return null;
+        }
+        if (paramType == FileManager.class) {
+            List<FileManager> l = files.get(paramName);
+            return (l == null || l.isEmpty()) ? null : l.get(0);
+        }
+        if (paramType == FileUploads.class) {
+            return new FileUploads(files);
+        }
+
+        String directValue = parameterMap.containsKey(paramName) ? parameterMap.get(paramName)[0] : null;
+        if (paramType == String.class) {
+            return directValue;
+        }
+        if (paramType == Integer.TYPE || paramType == Integer.class) {
+            return directValue == null ? null : Integer.valueOf(directValue);
+        }
+        if (paramType == Long.TYPE || paramType == Long.class) {
+            return directValue == null ? null : Long.valueOf(directValue);
+        }
+        if (paramType == Double.TYPE || paramType == Double.class) {
+            return directValue == null ? null : Double.valueOf(directValue);
+        }
+        if (paramType == Float.TYPE || paramType == Float.class) {
+            return directValue == null ? null : Float.valueOf(directValue);
+        }
+        if (paramType == Boolean.TYPE || paramType == Boolean.class) {
+            return directValue == null ? null : Boolean.valueOf(directValue);
+        }
+        if (paramType == Character.TYPE || paramType == Character.class) {
+            return directValue == null || directValue.isEmpty() ? null : directValue.charAt(0);
+        }
+
+        if (paramType.isPrimitive() || paramType.isEnum() || Number.class.isAssignableFrom(paramType)) {
+            return directValue == null ? null : directValue;
+        }
+
+        String prefix = paramName + ".";
+        boolean avecPrefixe = parameterMap.keySet().stream().anyMatch(key -> key.startsWith(prefix));
+        return bindBean(paramType, avecPrefixe ? prefix : "", parameterMap, files);
+    }
+
+    // lie les attributs de n'importe quelle classe, par nom d'attribut
+    private static Object bindBean(Class<?> type, String prefix, Map<String, String[]> parameterMap,
+            Map<String, List<FileManager>> files) {
+        try {
+            Object bean = type.getDeclaredConstructor().newInstance();
+            for (Class<?> c = type; c != null && c != Object.class; c = c.getSuperclass()) {
+                for (Field field : c.getDeclaredFields()) {
+                    if (Modifier.isStatic(field.getModifiers())) {
+                        continue;
+                    }
+                    String key = prefix + field.getName();
+                    Object value;
+                    if (field.getType() == FileManager.class) {
+                        List<FileManager> l = files.get(key);
+                        if (l == null || l.isEmpty()) {
+                            continue;
+                        }
+                        value = l.get(0);
+                    } else if (field.getType() == FileUploads.class) {
+                        value = new FileUploads(files);
+                    } else if (isFileManagerList(field)) {
+                        value = files.get(key);
+                        if (value == null) {
+                            continue;
+                        }
+                    } else if (isSimple(field.getType())) {
+                        String[] raw = parameterMap.get(key);
+                        if (raw == null) {
+                            continue;
+                        }
+                        value = convertToType(field.getType(), raw);
+                    } else {
+                        String nested = key + ".";
+                        if (parameterMap.keySet().stream().noneMatch(k -> k.startsWith(nested))) {
+                            continue;
+                        }
+                        value = bindBean(field.getType(), nested, parameterMap, files);
+                    }
+                    if (value != null) {
+                        assign(bean, c, field, value);
+                    }
+                }
+            }
+            return bean;
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    private static void assign(Object bean, Class<?> owner, Field field, Object value)
+            throws ReflectiveOperationException {
+        String name = field.getName();
+        String setterName = "set" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        try {
+            owner.getDeclaredMethod(setterName, field.getType()).invoke(bean, value);
+        } catch (NoSuchMethodException e) {
+            field.setAccessible(true);
+            field.set(bean, value);
+        }
+    }
+
+    private static boolean isFileManagerList(Field field) {
+        if (field.getType() != List.class || !(field.getGenericType() instanceof ParameterizedType)) {
+            return false;
+        }
+        return ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0] == FileManager.class;
+    }
+
+    private static boolean isSimple(Class<?> t) {
+        return t.isPrimitive() || t == String.class || t.isEnum()
+                || Number.class.isAssignableFrom(t) || t == Boolean.class
+                || t == Character.class || t == LocalDate.class;
+    }
+
+    private static Object convertToType(Class<?> targetType, String[] values) {
+        if (values == null || values.length == 0 || values[0] == null) {
+            return null;
+        }
+
+        String value = values[0];
+        if (targetType == String.class) {
+            return value;
+        }
+        if (value.isEmpty()) {
+            return null;
+        }
+        if (targetType.isEnum()) {
+            return Enum.valueOf((Class<Enum>) targetType, value);
+        }
+        if (targetType == LocalDate.class) {
+            return LocalDate.parse(value);
+        }
+        if (targetType == Integer.TYPE || targetType == Integer.class) {
+            return Integer.valueOf(value);
+        }
+        if (targetType == Long.TYPE || targetType == Long.class) {
+            return Long.valueOf(value);
+        }
+        if (targetType == Double.TYPE || targetType == Double.class) {
+            return Double.valueOf(value);
+        }
+        if (targetType == Float.TYPE || targetType == Float.class) {
+            return Float.valueOf(value);
+        }
+        if (targetType == Boolean.TYPE || targetType == Boolean.class) {
+            return Boolean.valueOf(value);
+        }
+        if (targetType == Character.TYPE || targetType == Character.class) {
+            return value.isEmpty() ? null : value.charAt(0);
+        }
+        return value;
     }
 
     @Override
