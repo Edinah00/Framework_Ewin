@@ -5,7 +5,6 @@ public class URLMethod {
 
     private String url;
     private String method;
-
     public URLMethod(String url, String method) {
         this.url = url;
         this.method = method;
