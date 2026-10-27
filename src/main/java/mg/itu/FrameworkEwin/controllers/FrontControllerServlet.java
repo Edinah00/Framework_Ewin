@@ -29,6 +29,7 @@ import mg.itu.FrameworkEwin.annotations.utils.FileUploads;
 import mg.itu.FrameworkEwin.annotations.utils.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import mg.itu.FrameworkEwin.models.*;
+import mg.itu.FrameworkEwin.session.EwinSession;
 import mg.itu.FrameworkEwin.annotations.methods.*;
 
 @MultipartConfig(maxFileSize = 50L * 1024 * 1024, maxRequestSize = 100L * 1024 * 1024)
@@ -84,6 +85,10 @@ public class FrontControllerServlet extends HttpServlet {
                 for (int i = 0; i < params.length; i++) {
                     String paramName = params[i].getName();
                     Class<?> paramType = params[i].getType();
+                    if (paramType == EwinSession.class) {
+                        args[i] = new EwinSession(request.getSession());
+                        continue;
+                    }
                     Object value = bindParameterValue(paramName, paramType, parameterMap, files);
                     args[i] = value;
                     System.out.println(params[i].getName() + " -> " + (value == null ? "null" : value));
@@ -184,7 +189,7 @@ public class FrontControllerServlet extends HttpServlet {
         }
         return files;
     }
-
+    
     private static Object bindParameterValue(String paramName, Class<?> paramType,
             Map<String, String[]> parameterMap, Map<String, List<FileManager>> files) {
         if (paramType == null) {
