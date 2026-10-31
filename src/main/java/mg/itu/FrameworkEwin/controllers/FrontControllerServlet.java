@@ -356,14 +356,28 @@ public class FrontControllerServlet extends HttpServlet {
         return value;
     }
 private String checkAccess(Method method, HttpServletRequest request) {
-    if (method.getAnnotation(Auth.class) == null) {
+    Auth auth = method.getAnnotation(Auth.class);
+    if (auth == null) {
         return null;
     }
     HttpSession http = request.getSession(false);
     if (http == null || http.getAttribute(initParam("auth-session-key", "userId")) == null) {
         return "Access denied";
     }
-    return null;
+    if (auth.roles().length == 0) {
+        return null;
+    }
+    Object role = http.getAttribute(initParam("role-session-key", "role"));
+    if (role == null) {
+        return "Forbidden";
+    }
+    Collection<?> actuels = role instanceof Collection ? (Collection<?>) role : List.of(role);
+    for (Object r : actuels) {
+        if (Arrays.asList(auth.roles()).contains(String.valueOf(r))) {
+            return null;
+        }
+    }
+    return "Forbidden";
 }
 
 private String initParam(String nom, String defaut) {
