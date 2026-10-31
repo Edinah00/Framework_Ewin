@@ -6,12 +6,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.util.LinkedHashMap;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +80,11 @@ public class FrontControllerServlet extends HttpServlet {
                     }
                 }
                 if (method == null) throw new ServletException("Méthode introuvable : " + methodName);
+                String refus = checkAccess(method, request);
+                if (refus != null) {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, refus);
+                    return;
+                }
                 request.setCharacterEncoding("UTF-8");
                 Parameter[] params= method.getParameters();
                 Object[] args = new Object[params.length];
@@ -347,6 +355,21 @@ public class FrontControllerServlet extends HttpServlet {
         }
         return value;
     }
+private String checkAccess(Method method, HttpServletRequest request) {
+    if (method.getAnnotation(Auth.class) == null) {
+        return null;
+    }
+    HttpSession http = request.getSession(false);
+    if (http == null || http.getAttribute(initParam("auth-session-key", "userId")) == null) {
+        return "Access denied";
+    }
+    return null;
+}
+
+private String initParam(String nom, String defaut) {
+    String v = getServletContext().getInitParameter(nom);
+    return (v == null || v.isBlank()) ? defaut : v;
+}
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
